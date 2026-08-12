@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { getSumOfTimes, getSolveTimes, calculateBestMon, calculateMean, calculateAvg, calculateBestAon, formatTime } from '@/helpers/timer.js'
+import { calculateBestMon, calculateMean, calculateAvg, calculateBestAon, formatTime } from '@/helpers/timer.js'
 
 export const session_types = [
 	{ name: '3x3 Blindfolded', id: 0 },
@@ -37,7 +37,6 @@ export const useTimerStore = defineStore('timerStore', {
 				id: newID,
 				type: 0,
 				solves: [],
-				bests: {},
 			})
 
 			this.saveState()
@@ -94,30 +93,29 @@ export const useTimerStore = defineStore('timerStore', {
 			return dnfs
 		},
 
-		moN(sessionID, n) { //Mean of N
+		moN(sessionID, section, n) { //Mean of N
 			if (this.getSession(sessionID).solves.length < n)
-				return [[-1, true], [-1, true], [-1, true]]
+				return [-1, true]
 			const solves = this.getSession(sessionID).solves.slice(-n) //Latest n solves
-			const means = [calculateMean(solves, 0), calculateMean(solves, 1), calculateMean(solves, 2)]
-			return means
+			return calculateMean(solves, section)
 		},
-		aoN(sessionID, n) { //Average of N
+		aoN(sessionID, section, n) { //Average of N
 			if (this.getSession(sessionID).solves.length < n)
-				return [[-1, true], [-1, true], [-1, true]]
+				return [-1, true]
 			const solves = this.getSession(sessionID).solves.slice(-n) //Latest n solves
-			return [calculateAvg(solves, 0), calculateAvg(solves, 1), calculateAvg(solves, 2)]
+			return calculateAvg(solves, section)
 		},
 
-		getSessionStatistics(id) {
+		getSessionStatistics(id, section) {
 			const solves = this.getSession(id).solves
 			const out = [
-				["time",  this.moN(id, 1)  , calculateBestMon(solves, 1)],
-				["mo3",     this.moN(id, 3)  , calculateBestMon(solves, 3)],
-				["ao5",     this.aoN(id, 5)  , calculateBestAon(solves, 5)],
-				["ao12",    this.aoN(id, 12) , calculateBestAon(solves, 12)],
-				["ao25",    this.aoN(id, 25) , calculateBestAon(solves, 25)],
-				["ao50",    this.aoN(id, 50) , calculateBestAon(solves, 50)],
-				["ao100",   this.aoN(id, 100), calculateBestAon(solves, 100)],
+				["time",    this.moN(id, section, 1)  , calculateBestMon(solves, section, 1)],
+				["mo3",     this.moN(id, section, 3)  , calculateBestMon(solves, section, 3)],
+				["ao5",     this.aoN(id, section, 5)  , calculateBestAon(solves, section, 5)],
+				["ao12",    this.aoN(id, section, 12) , calculateBestAon(solves, section, 12)],
+				["ao25",    this.aoN(id, section, 25) , calculateBestAon(solves, section, 25)],
+				["ao50",    this.aoN(id, section, 50) , calculateBestAon(solves, section, 50)],
+				["ao100",   this.aoN(id, section, 100), calculateBestAon(solves, section, 100)],
 			]
 			return out
 		},
@@ -133,6 +131,16 @@ export const useTimerStore = defineStore('timerStore', {
 		loadState() {
 			var data = JSON.parse(localStorage.getItem('timerStore')) || {}
 			this.sessions = data.sessions || []
+
+			// Debug: Generate a bunch of random solves
+			if (false) {
+				this.sessions[6].solves = []
+				for (var i = 0; i < 2000; i++) {
+					const randomSolve = [Math.floor(Math.random() * 10000) + 10000, Math.floor(Math.random() * 10000), Math.random() < 0.1 ? 2 : (Math.random() < 0.9 ? 0 : 1), "R U R\' U\'"]
+					this.sessions[6].solves.push(randomSolve)
+				}
+				this.saveState()
+			}
 		},
 	},
 	getters: {

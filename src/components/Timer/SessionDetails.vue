@@ -24,10 +24,16 @@
 	}
 
 	const data = computed({
-		get: () => timerStore.getSessionStatistics(props.sessionID).map((statRow) => ({
-								name: statRow[0],
-								current: format(statRow[1][section.value]),
-								best:    format(statRow[2][section.value])}))
+		get: () => {
+			console.time("Fetching session statistics")
+			const result = timerStore.getSessionStatistics(props.sessionID, section.value).map((statRow) => ({
+				name: statRow[0],
+				current: format(statRow[1]),
+				best: format(statRow[2])
+			}))
+			console.timeEnd("Fetching session statistics")
+			return result
+		}
 	})
 
 	const section = ref(0)
