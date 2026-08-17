@@ -51,7 +51,7 @@ export function calculateMean(solves, section) {
 }
 
 // Convert the solve into just [time, isDnf]
-function getSimplifiedSolve(solve, section) {
+export function getSimplifiedSolve(solve, section) {
 	if (section == 0)
 		return [solve[0] + (solve[2] == 2 ? 2000 : 0), solve[2] == 1] // Fold +2s into the time
 	else if (section == 1)
@@ -61,26 +61,37 @@ function getSimplifiedSolve(solve, section) {
 }
 
 // This finds the best mean of n solves in a whole session for each section of the solve
-export function calculateBestMon(solves, section, n) {
+// Expects solves in the simplified format for the sake of optimisation
+export function calculateBestMon(simplifiedSolves, section, n) {
+	if (simplifiedSolves.length < n)
+		return -1
+
 	//console.time("calculating mo" + n.toString())
+	const queue = Array.from({ length: n }, n => [0, false])
+	let rollingSum = 0;
+	let rollingDnfCount = 0
+	for (var i = 0; i < n; i++) {
+		queue[i] = simplifiedSolves[i]
+		rollingSum += simplifiedSolves[i][0]
+		if (simplifiedSolves[i][1])
+			rollingDnfCount++
+	}
 
-	let best = -1
-	const simpleSolves = solves.map(solve => getSimplifiedSolve(solve, section))
-	for (var start = 0; start < solves.length - n + 1; start++) {
-		let timeSum = 0
-		let dnfs = 0
-		for (var j = 0; j < n; j++) {
-			timeSum += simpleSolves[start + j][0]
+	let best = (section == 0 && rollingDnfCount > 0) ? -1 : (rollingSum / n)
 
-			if (simpleSolves[start + j][1])
-				dnfs++
-		}
-		const mean = timeSum / n
-		const dnf = (section == 0 && dnfs > 0)
+	for (var i = n; i < simplifiedSolves.length; i++) {
+		if (queue[i % n][1]) rollingDnfCount--
+		rollingSum -= queue[i % n][0]
 
-		if (dnf || mean == -1)
+		queue[i % n] = simplifiedSolves[i]
+
+		rollingSum += queue[i % n][0]
+		if (queue[i % n][1]) rollingDnfCount++
+
+		if (rollingDnfCount > 0 && section == 0)
 			continue
 
+		const mean = rollingSum / n
 		if (mean < best || best == -1)
 			best = mean
 	}
@@ -102,7 +113,7 @@ export function calculateAvg(solves, section) {
 	let maxTime = 0
 
 	for (var i = 0; i < solves.length; i++) { 
-		if (solves[i][2] == 1) //need DNF count outside of loop so we know whether to override min time with a DNF
+		if (simpleSolves[i][1]) //need DNF count outside of loop so we know whether to override min time with a DNF
 			dnfIndices.push(i)
 	}
 
@@ -126,23 +137,27 @@ export function calculateAvg(solves, section) {
 }
 
 // This finds the best average of n solves in a whole session for each section of the solve
-export function calculateBestAon(solves, section, n) {
+// Expects solves in the simplified format for the sake of optimisation
+export function calculateBestAon(simplifiedSolves, section, n) {
+	if (simplifiedSolves.length < n)
+		return -1
+		
 	//console.time("calculating ao" + n.toString())
-	const simpleSolves = solves.map(solve => getSimplifiedSolve(solve, section))
 	let best = -1
-	for (var first = 0; first < solves.length - n + 1; first++) {
+	for (var first = 0; first < simplifiedSolves.length - n + 1; first++) {
 		const dnfs = []
 		let timeSum = 0
 		let minTime = 999999999
 		let maxTime = 0
 		for (var j = 0; j < n; j++) {
-			if (solves[first + j][2] == 1) //need DNF count outside of loop so we know whether to override min time with a DNF
-				dnfs.push(solves[first + j][0])
+			if (simplifiedSolves[first + j][1]) //need DNF count outside of loop so we know whether to override min time with a DNF
+				dnfs.push(simplifiedSolves[first + j][0])
 		}
-		for (var j = 0; j < n; j++) {
-			let solveTime = simpleSolves[first + j][0]
 
-			if (solveTime < minTime && (section != 0 || dnfs.length > 1 || !simpleSolves[first + j][1]))
+		for (var j = 0; j < n; j++) {
+			let solveTime = simplifiedSolves[first + j][0]
+
+			if (solveTime < minTime && (section != 0 || dnfs.length > 1 || !simplifiedSolves[first + j][1]))
 				minTime = solveTime
 			else if (solveTime > maxTime)
 				maxTime = solveTime

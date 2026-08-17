@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { calculateBestMon, calculateMean, calculateAvg, calculateBestAon, formatTime } from '@/helpers/timer.js'
+import { getSimplifiedSolve, calculateBestMon, calculateMean, calculateAvg, calculateBestAon, formatTime } from '@/helpers/timer.js'
 
 export const session_types = [
 	{ name: '3x3 Blindfolded', id: 0 },
@@ -108,14 +108,15 @@ export const useTimerStore = defineStore('timerStore', {
 
 		getSessionStatistics(id, section) {
 			const solves = this.getSession(id).solves
+			const simpleSolves = solves.map(solve => getSimplifiedSolve(solve, section))
 			const out = [
-				["time",    this.moN(id, section, 1)  , calculateBestMon(solves, section, 1)],
-				["mo3",     this.moN(id, section, 3)  , calculateBestMon(solves, section, 3)],
-				["ao5",     this.aoN(id, section, 5)  , calculateBestAon(solves, section, 5)],
-				["ao12",    this.aoN(id, section, 12) , calculateBestAon(solves, section, 12)],
-				["ao25",    this.aoN(id, section, 25) , calculateBestAon(solves, section, 25)],
-				["ao50",    this.aoN(id, section, 50) , calculateBestAon(solves, section, 50)],
-				["ao100",   this.aoN(id, section, 100), calculateBestAon(solves, section, 100)],
+				["time",    this.moN(id, section, 1)  , calculateBestMon(simpleSolves, section, 1)],
+				["mo3",     this.moN(id, section, 3)  , calculateBestMon(simpleSolves, section, 3)],
+				["ao5",     this.aoN(id, section, 5)  , calculateBestAon(simpleSolves, section, 5)],
+				["ao12",    this.aoN(id, section, 12) , calculateBestAon(simpleSolves, section, 12)],
+				["ao25",    this.aoN(id, section, 25) , calculateBestAon(simpleSolves, section, 25)],
+				["ao50",    this.aoN(id, section, 50) , calculateBestAon(simpleSolves, section, 50)],
+				["ao100",   this.aoN(id, section, 100), calculateBestAon(simpleSolves, section, 100)],
 			]
 			return out
 		},
