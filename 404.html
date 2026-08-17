@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<!--https://stackoverflow.com/questions/48521177/404-when-reloading-a-vue-website-published-to-github-pages-->
+<html>
+    <head>
+        <script>
+            // Extract the full path from the current URL
+            const redirectTo = location.pathname + location.search + location.hash;
+            sessionStorage.redirect = redirectTo;
+            window.location.replace('/'); // Redirect to root
+        </script>
+        <title>BlindBase</title>
+    </head>
+    <body>
+    </body>
+</html>
